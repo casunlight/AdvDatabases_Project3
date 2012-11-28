@@ -8,6 +8,7 @@ ie python main.py INTEGRATED-DATASET.csv 0.3 0.5
 import csvHelper
 import logging
 import sys
+import AprioriTID
 
 if __name__ == '__main__':
     
@@ -24,8 +25,29 @@ if __name__ == '__main__':
     dataMatrix=csvHelper.csvReader(filename)
     
     #test our data structure
+    # for row in dataMatrix.csvMatrix:
+    #     print ', '.join(row)
+
+    # Assign unique transaction IDs for each transaction
+    transactions = {}
+    tid = 0
     for row in dataMatrix.csvMatrix:
-        print ', '.join(row)
-        
-        
-        
+        transactions[tid] = tuple([tid, row])
+        tid = tid + 1
+
+
+    # transactions = {}
+    # transactions[100] = tuple((100, [1,3,4]))
+    # transactions[200] = tuple((200, [2,3,5]))
+    # transactions[300] = tuple((300, [1,2,3,5]))
+    # transactions[400] = tuple((400, [2,5]))
+    
+
+    results = AprioriTID.aprioriTid(transactions, float(arglist[2]), float(arglist[3]))
+
+    print ""
+    print "RESULTS"
+    print results
+
+    
+
