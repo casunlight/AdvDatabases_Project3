@@ -72,12 +72,28 @@ if __name__ == '__main__':
                 lhs = n[0]
 
             support = float(supportCounts[hash_set(n)]) / len(transactions)
+            lhs_supp = float(supportCounts[lhs]) / len(transactions) 
+            rhs_supp = float(supportCounts[n[len(n)-1]]) / len(transactions)
+
             confidence = float(supportCounts[hash_set(n)]) / len(transactions)
-            confidence /= ( float(supportCounts[lhs]) / len(transactions) )
+            confidence /= lhs_supp
+
+
+            aconf = confidence
+            if aconf == 1.0:
+                aconf = 0.99
+
+            conviction = (1.0 - rhs_supp) / (1.0 - aconf)
+
+            # interestingness(a->b)=sup(a,b)/(sup(a)sup(b))
+            interestingness = support / (lhs_supp * rhs_supp)
 
             if confidence < float(arglist[3]):
                 continue
 
-            print "%s => %s (Conf %%%d, Supp: %%%d) " % (n[0:len(n)-1],n[len(n)-1:len(n)], (confidence*100), (support*100))
+            print "%s => %s (Conf %%%d, Supp: %%%d, conviction %f, interestingness %f) " % \
+                (n[0:len(n)-1],n[len(n)-1:len(n)], (confidence*100), (support*100), conviction, interestingness)
+
+
 
     
