@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
 
             # Conviction cutoff (Discard less than 50)
-            if conviction < 50:
+            if conviction < 2:
                 continue
 
             # Confidence cutoff (discard less than min_conf)
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     debug_output = output
     for rule in rules:   
 
-        debug_output+="%s (Conf %%%d, Supp: %%%d, Conviction %d, Interestingness %f) \n" % \
+        debug_output+="%s (Conf %%%d, Supp: %%%d, Conviction %f, Interestingness %f) \n" % \
             (rule[0], rule[1], rule[2], rule[3], rule[4])
 
         output+="%s (Conf %%%d, Supp: %%%d) \n" % \
