@@ -65,6 +65,7 @@ if __name__ == '__main__':
         for n in map(list, itertools.permutations(itemset, len(itemset))):
 
             lhs = hash_set(n[0:len(n)-1])
+            rhs = n[len(n)-1]
 
             if len(n[0:len(n)-1]) == 1:
                 lhs = n[0]
@@ -75,10 +76,10 @@ if __name__ == '__main__':
             # 3. rhs_supp = support(Y)
             support = float(supportCounts[hash_set(n)]) / len(transactions)
             lhs_supp = float(supportCounts[lhs]) / len(transactions) 
-            rhs_supp = float(supportCounts[n[len(n)-1]]) / len(transactions)
+            rhs_supp = float(supportCounts[rhs]) / len(transactions)
 
             # Calculating confidence
-            confidence = support / lhs_supp
+            confidence = float(support) / lhs_supp
 
             # Calculating conviction
             aconf = confidence
@@ -101,17 +102,17 @@ if __name__ == '__main__':
             # Append to our list of rules
             rules.append(tuple(("%s => %s" % (n[0:len(n)-1],n[len(n)-1:len(n)]), confidence*100, support*100, conviction, interestingness) ))
 
-    rules.sort(key=lambda rule: rule[3])
+    # rules.sort(key=lambda rule: rule[3], reverse=True)
 
 
     # Generate output for rules
     debug_output = output
     for rule in rules:   
 
-        debug_output+="%s (Conf %%%d, Supp: %%%d, Conviction %f, Interestingness %f) \n" % \
+        debug_output+="%s (Conf %%%d, Supp: %%%d, Conviction %d, Interestingness %f) \n" % \
             (rule[0], rule[1], rule[2], rule[3], rule[4])
 
-        output+="%s i(Conf %%%d, Supp: %%%d) \n" % \
+        output+="%s (Conf %%%d, Supp: %%%d) \n" % \
             (rule[0], rule[1], rule[2])
             
 
@@ -119,6 +120,7 @@ if __name__ == '__main__':
     print ""
     print "---------------------"
     print "Large itemsets and High-confidence rules are stored in output.txt"
+    print ""
 
     f = open("output.txt", "w")
     f.write(output)
