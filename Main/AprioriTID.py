@@ -103,7 +103,7 @@ def LargeItemsetGen(transactions,minsupp):
             if str(items[i]).lower().strip() == "unspecified" or \
                str(items[i]).lower().strip() == "n/a" or str(items[i]).strip() == "":
                 continue 
-            # print 'Item: {}'.format(row[i])
+            
             if items[i] in dictRawItem:
                 dictRawItem[items[i]] =  dictRawItem[items[i]] + 1
             else:
@@ -118,80 +118,56 @@ def LargeItemsetGen(transactions,minsupp):
     return  (L1, dictRawItem)
         
     
-def aprioriTid(transactions, minsupp, minconf):
+def aprioriTid(transactions, minsupp):
+    '''
+    Computes large itemsets appropriate for rule mining (which support > minsupp)
+    Returns tuple (largesets, supportCounts)
+        * supportCounts is the map: itemset => number of occurances in database
+        * largesets is a list of itemsets
+    '''
+
+    # Initial values
     (L1, item_counts) = LargeItemsetGen(transactions, minsupp)
-    L = [ [],  L1]
-    # print ""
-    # print "############################"
-    # print "Database"
-    
-
     prevC_comp = transactions
-
-
-
     k = 2
-    
     supportCounts = item_counts
-
+    L = [ [],  L1] 
 
     while len(L[k-1]) > 0:
 
+        # Compulte Candidate elements using a-priori gen algorithm
         Ck = aprioriGen(L[k-1], k)
         C_comp = {}
-        # print "Ck: %s" % Ck
-        # print ""
-        # print "############################"
 
-        
-
-        # print "Transactions in previous C comp:"
+        # For every transaction in previous iteration C'
         for tid in prevC_comp:   
             if k == 2:
                 t_set_of_items = [[x] for x in prevC_comp[tid][1]]
             else:
                 t_set_of_items = prevC_comp[tid][1]
 
-            # print "T[%d] = %s" % (tid, t_set_of_items)
-            
             Ct = []
             for c in Ck:   
+                # Determine if this itemset satisfies the condition to be appeneded to Ct
+                # that is: { (c- c[k]) in  t.set-of-itemsets  ^ (c- c[k - 1]) in t.set-of-itemsets) }
                 c_items = c[0]
-                # if k == 2:
-                    # c_items_minus_ck = [[x] for x in set(c_items) - set([c_items[k-1]])]
-                    # c_items_minus_ckminus1 = [[x] for x in set(c_items) - set([c_items[k-2]])]
-                # else:
                 c_items_minus_ck = [list(set(c_items) - set([c_items[k-1]]))]
                 c_items_minus_ckminus1 = [list(set(c_items) - set([c_items[k-2]]))]
-
-                # print ""
-                # print "C: %s" % c_items
-                
-                
-                # print ""
-
 
 
                 ck_belongs_to_t = True
                 for item in c_items_minus_ck:
 
                     if item not in t_set_of_items:
-                        ck_belongs_to_t = False
-                # print "C - c[k]: %s ? %s" % (list(c_items_minus_ck), ck_belongs_to_t)
+                        ck_belongs_to_t = False                
 
                 ckm1_belongs_to_t = True
                 for item in c_items_minus_ckminus1:
                     if item not in t_set_of_items:
                         ckm1_belongs_to_t = False
-
-                # print "C - c[k-1]: %s ? %s" % (list(c_items_minus_ckminus1), ckm1_belongs_to_t)
-
+        
                 if ckm1_belongs_to_t and ck_belongs_to_t:
-                    # print "appending to Ct"
                     Ct.append(list(c_items))
-
-
-            # print "Ct %d: %s" % (tid, Ct)
 
             for c in Ct:
                 hashed_set = hash_set(c)
@@ -200,18 +176,13 @@ def aprioriTid(transactions, minsupp, minconf):
                 
                 supportCounts[hashed_set] += 1
 
+            # If Ct is non-empty, add to C'
             if len(Ct) > 0:
                 C_comp[tid] = tuple((tid, Ct))
 
-        # print "--------------------"
-        # print "C Comp = "
-        # for tid in C_comp:
-            # print "%d %s" % (tid, C_comp[tid][1])
 
-        # print "--------------------"
-        
+        # Compute Lk
         L.append([]) # This will be L[k]
-
 
         for c in Ck:
             c_items = c[0]
@@ -221,12 +192,13 @@ def aprioriTid(transactions, minsupp, minconf):
             if support >= minsupp:            
                 L[k].append(tuple((c_items, supportCounts[hash_set(c_items)])))
 
-        # print "L%d = %s" % (k, L[k])
-
+        # Prepare for next iteration
         prevC_comp = C_comp
-
         k = k + 1
+
     
+    # Union of L items excluding last one
+    # (first one is excluded as well because it's only a placeholder to adjust starting index)    
     result = []
     i = 0
 
@@ -236,9 +208,9 @@ def aprioriTid(transactions, minsupp, minconf):
             continue
         i += 1
 
-
         result = result + l
 
+    # Retrun
     return (result, supportCounts)
 
 
