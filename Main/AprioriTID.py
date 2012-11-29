@@ -4,7 +4,7 @@ from Agrawal's 'Fast Algorithms for Mining Association Rules'
 '''
 import itertools
 import sys
-
+from common import *
 
 #Generate all k size large itemsets, those with minimum support. 
 #Return Ck where each member has two fields: i) itemset ii) support count
@@ -15,6 +15,7 @@ def aprioriGen(LkminusOne, k):
     lenCK=0
     lenCKprune=0
     Ck=[] #list{ tuple([sorted large itemset],support) } 
+    prunedCk = []
     if k==2: #trivial case
         for i in range(len(LkminusOne)):
             for j in range(len(LkminusOne)-i-1):
@@ -22,7 +23,7 @@ def aprioriGen(LkminusOne, k):
                 tempList=[LkminusOne[i][0],LkminusOne[j+i+1][0]] #UNSORTED
                 tempTuple=tuple( (tempList, min(LkminusOne[i][1],LkminusOne[j+i][1])) )
                 # print tempTuple
-                Ck.append(tempTuple)
+                prunedCk.append(tempTuple)
     elif k>2:
         #convert LkminusOne to list of sets for easier comparisons later
         for i in range(len(LkminusOne)):
@@ -58,11 +59,13 @@ def aprioriGen(LkminusOne, k):
         lenCK=len(Ck)
         #PRUNE STEP
         #Delete all itemsets c in Ck s.t. some (k-1) subset of c is not in Lk-1
+        
         for i in range(len(Ck)):
             s=set(Ck[i][0])
             # print 'set: {} k: {}'.format(s,kminus)
             setList=map(set, itertools.combinations(s,kminus))  #generate all k-1 combinations of each candidate itemset
             # print 'SetList: {}'.format(setList)
+            deleteCandidate = False
             for j in range(len(setList)):
                 # print j
                 count = 0
@@ -71,11 +74,15 @@ def aprioriGen(LkminusOne, k):
                     if len(setList[j] & LkminusOneSets[k]) != len(LkminusOneSets[k]):
                         count = count + 1
                 if count == len(LkminusOneSets): #candidate itemset subset not found in any of prior Lk-1, DISCARD entire candidate with short circuit
-                    del Ck[i]
+                    deleteCandidate = True
                     break      
-        lenCKprune = len(Ck)     
+
+            if not deleteCandidate:
+                prunedCk.append(Ck[i])
+
+        lenCKprune = len(prunedCk)     
         # print 'old length: {} pruned length: {}'.format(lenCK, lenCKprune)
-    return Ck
+    return prunedCk
         
 
 
@@ -108,11 +115,12 @@ def LargeItemsetGen(transactions,minsupp):
         if support >= minsupp:
             #add item to L1
             L1.append(tuple((key, dictRawItem[key]))) #key , support count      
-    return  L1
+    return  (L1, dictRawItem)
         
     
 def aprioriTid(transactions, minsupp, minconf):
-    L = [ [], LargeItemsetGen(transactions, minsupp) ]
+    (L1, item_counts) = LargeItemsetGen(transactions, minsupp)
+    L = [ [],  L1]
     # print ""
     # print "############################"
     # print "Database"
@@ -124,16 +132,18 @@ def aprioriTid(transactions, minsupp, minconf):
 
     k = 2
     
+    supportCounts = item_counts
+
 
     while len(L[k-1]) > 0:
 
         Ck = aprioriGen(L[k-1], k)
         C_comp = {}
-
+        # print "Ck: %s" % Ck
         # print ""
         # print "############################"
 
-        supportCounts = {}
+        
 
         # print "Transactions in previous C comp:"
         for tid in prevC_comp:   
@@ -184,10 +194,11 @@ def aprioriTid(transactions, minsupp, minconf):
             # print "Ct %d: %s" % (tid, Ct)
 
             for c in Ct:
-                if str(c) not in supportCounts:
-                    supportCounts[str(c)] = 0
+                hashed_set = hash_set(c)
+                if hashed_set not in supportCounts:
+                    supportCounts[hashed_set] = 0
                 
-                supportCounts[str(c)] += 1
+                supportCounts[hashed_set] += 1
 
             if len(Ct) > 0:
                 C_comp[tid] = tuple((tid, Ct))
@@ -204,11 +215,11 @@ def aprioriTid(transactions, minsupp, minconf):
 
         for c in Ck:
             c_items = c[0]
-            if str(c_items) not in supportCounts:
+            if hash_set(c_items) not in supportCounts:
                 continue
-            support = float(supportCounts[str(c_items)])/len(transactions)
+            support = float(supportCounts[hash_set(c_items)])/len(transactions)
             if support >= minsupp:            
-                L[k].append(tuple((c_items, supportCounts[str(c_items)])))
+                L[k].append(tuple((c_items, supportCounts[hash_set(c_items)])))
 
         # print "L%d = %s" % (k, L[k])
 
@@ -228,7 +239,7 @@ def aprioriTid(transactions, minsupp, minconf):
 
         result = result + l
 
-    return result
+    return (result, supportCounts)
 
 
     
