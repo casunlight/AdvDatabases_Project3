@@ -94,5 +94,9 @@ for i = 1:size(final,2) %cols
     end
 end
 %%
+%remove attributes with too many N/A's or too little relevance
+%remove agency (redundant), address type, facility type, school name
+final(:,[1 7 9 10])=[]
+
 %save to csv
 cell2csv('trainingData.csv',final,',');
